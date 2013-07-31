@@ -1,0 +1,43 @@
+set library 1;
+
+operator StringV(real angle, qureg result, qureg flags) {
+    int lastFlag;
+    if #flags == 1 {
+        V(angle, result & flags);
+    } else {
+        lastFlag = #flags - 1;
+        V(angle / 2, result & flags[lastFlag]);
+        
+        // StringNot(flags[lastFlag], flags[0 \ (#flags - 1)]);
+        H(flags[lastFlag]);
+        StringV(pi, flags[lastFlag], flags[0 \ (#flags - 1)]);
+        H(flags[lastFlag]);
+        
+        V(-angle / 2, result & flags[lastFlag]);
+        
+        // StringNot(flags[lastFlag], flags[0 \ (#flags - 1)]);
+        H(flags[lastFlag]);
+        StringV(pi, flags[lastFlag], flags[0 \ (#flags - 1)]);
+        H(flags[lastFlag]);
+        
+        StringV(angle / 2, result, flags[0 \ (#flags - 1)]);
+    }
+}
+
+operator StringNot(qureg result, qureg flags) {
+    if #flags == 1 {
+        CNot(result, flags);
+    } else {
+        H(result);
+        StringV(pi, result, flags);
+        H(result);
+    }
+}
+
+operator DoubleV(real angle, qureg result, qureg flags) {
+    StringV(angle, result, flags);
+}
+
+operator DoubleNot(qureg result, qureg flags) {
+    StringNot(result, flags);
+}

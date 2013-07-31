@@ -1,0 +1,19 @@
+operator DieDist(qureg reg) {
+    complex half;
+
+    if (#reg != 3) {
+        exit "die should be 3 qubits";
+    }
+    H(reg[2]); // one in two chance that the LSB is 1
+    
+    // if reg[2] == 0, sqrt(3)*reg[1] = sqrt(2)*<1| + 1*<0|
+    // if reg[2] == 1, sqrt(3)*reg[1] = 1*<1| + sqrt(2)*<0|
+    Rot(-1.9106332362, reg[1]);
+    CNot(reg[1], reg[2]);
+    
+    H(reg[0]);
+    V(pi / 2, reg[0] & reg[1]);
+    V(pi / 2, reg[0] & reg[2]);
+    H(reg[0]);
+    Not(reg[0]);
+}

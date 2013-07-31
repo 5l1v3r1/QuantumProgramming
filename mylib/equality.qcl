@@ -1,0 +1,53 @@
+include "doubleop";
+
+operator NotIfEqual(qureg flag, qureg b1, qureg b2) {
+    int i;
+    
+    if #b1 != #b1 {
+        exit "Cannot compare buffers of varying length.";
+    }
+    
+    if #b1 == 0 {
+        Not(flag);
+    } else {
+        // all will be 1 if its equal
+        for i = 0 to #b1 - 1 {
+            CNot(b2[i], b1[i]);
+            Not(b2[i]);
+        }
+    
+        StringNot(flag, b2);
+        
+        // undo our previous operation
+        for i = 0 to #b1 - 1 {
+            CNot(b2[i], b1[i]);
+            Not(b2[i]);
+        }
+    }
+}
+
+operator CNotIfEqual(qureg flag, qureg b1, qureg b2, qureg c) {
+    int i;
+    
+    if #b1 != #b1 {
+        exit "Cannot compare buffers of varying length.";
+    }
+    
+    if #b1 == 0 {
+        Not(flag);
+    } else {
+        // all will be 1 if its equal
+        for i = 0 to #b1 - 1 {
+            CNot(b2[i], b1[i]);
+            Not(b2[i]);
+        }
+    
+        StringNot(flag, b2 & c);
+        
+        // undo our previous operation
+        for i = 0 to #b1 - 1 {
+            CNot(b2[i], b1[i]);
+            Not(b2[i]);
+        }
+    }
+}

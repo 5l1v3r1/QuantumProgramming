@@ -1,0 +1,48 @@
+include "equality";
+
+operator SplitVal(qureg r, qureg a, qureg b) {
+    qureg s[1];
+    int i;
+    if #r != #a or #r != #b {
+        exit "All input registers must be equal in length.";
+    }
+    
+    for i = 0 to #r - 1 {
+        NotIfEqual(s, a[0\i], b[0\i]);
+        
+        // rotate by pi/4 if they are not equal
+        // if and only if the earlier buffers
+        // were equal;
+        // rotate by pi/2 if they are equal
+        // and the previous buffers were also
+        // equal.
+        H(r[i]);
+        DoubleV(pi/2, r[i], a[i] & s[0]);
+        DoubleV(pi/2, r[i], b[i] & s[0]);
+        H(r[i]);
+        
+        // if the earlier buffers were not equal,
+        // we simply set the bits here
+        Not(s[0]);
+        CNotIfEqual(r[i], r[0\i], a[0\i], a[i] & s[0]);
+        CNotIfEqual(r[i], r[0\i], b[0\i], b[i] & s[0]);
+        Not(s[0]);
+        
+        NotIfEqual(s, a[0\i], b[0\i]);
+    }
+}
+
+operator FullyEntangle(qureg r, qureg a) {
+    int i;
+    
+    if #r != #a {
+        exit "Input registers must be equal in length.";
+    }
+    
+    H(r[0]);
+    for i = 1 to #r - 1 {
+        CNot(r[i], r[i - 1]);
+        CNot(r[i], a[i - 1]);
+        CNot(r[i], a[i]);
+    }
+}
