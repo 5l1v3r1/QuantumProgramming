@@ -1,9 +1,8 @@
-A Note
-======
+# A Note
 
-This is a journal in which I will document my learning process. I will refer back to this in order to respond to potential future queries about my initial quantum programming experience.
+This is a journal in which I will document my learning process. I will refer back to this in order to respond to potential future queries about my initial quantum programming experience. All entries are dated and timestamped in 24-hour time.
 
-### Wed, Jul 31, 1:19 - 1:33
+### Wed, Jul 31, 1:19
 
 On the 28th, I set out to find a quantum language suitable to my needs. The day before this I had begun to read about quantum principles, but I was still not comfortable with principles such as entanglement. At first I experimented with Quipper, but I ultimately settled on QCL.
 
@@ -22,3 +21,11 @@ This morning I decided to create something to mix two states (i.e. Mix(<010|, <1
 Last night and today I began to ponder how quantum algorithms could be faster than classical algorithms. I discovered that, in order to understand Shor's algorithm, I would first need a full grasp on the Quantum Fourier Transform. The tutorial which I've been following (http://www.quantiki.org/wiki/Basic_concepts_in_quantum_computation#Bibliography) had only a brief explanation and thus I was unable to grasp even the functionality of the QFT. Eventually, I came to understand the QFT as the DFT where the coefficients of each state (e.g. the coefficients of <000|, <001|, <010|… for a 3 qubit register) act as the vector which is to be transformed. Furthermore, in order to understand the actual QFT circuit, I decided to only prove that the circuit worked for a pure input (i.e. one of the input coefficients is 1 and the rest are 0).
 
 On paper I was able to calculate what the coefficient for each result state would need to be. However, I had trouble using this information to derive the coefficient for each qubit. After reading http://www.cs.washington.edu/education/courses/cse599d/06wi/lecturenotes9.pdf I still struggled to understand some of the logic required to arrive at the final circuit. At present, I can convince myself that the circuit works, but it certainly does not feel natural or elegant to me in the least. I want to refrain from learning about Shor's algorithm, at least until I fully understand the QFT.
+
+### Fri, Aug 2, 19:26
+
+Today I finally was comfortable with the QFT. Now it is beginning to make sense to me how it works in its entirety. I think the majority of my struggling was caused by the unusual fact that the QFT can actually be expressed as a set of unentangled qubits. Anyways, I set out today to understand Shor's algorithm. I think that I now have a pretty good understanding of how the algorithm works.
+
+In preparation for implementing Shor's algorithm on my own, I decided to write my own arithmetic operations so that I could implement exponentiation mod N (needed for Shor's algorithm). While I did not nearly finish what I plan to, I was able to implement an addition function which does not return an additional carry bit (although at present it still uses a scratch qubit for this). In addition, I made a wrapper function which adds in place (although at present it does allocate a third qureg). This will make it possible to implement long multiplication.
+
+While most of the circuits I am implementing are pretty closely knit with their classical equivalents, I am noticing myself becoming increasingly comfortable with unitary operations. I can quickly tell whether something is possible or not, and I can pretty quickly implement any gate which is thrown my way.

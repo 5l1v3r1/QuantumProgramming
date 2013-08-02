@@ -51,3 +51,18 @@ operator CNotIfEqual(qureg flag, qureg b1, qureg b2, qureg c) {
         }
     }
 }
+
+operator NotIfEqualClassical(qureg flag, qureg b, int realNum) {
+    int i;
+    for i = 0 to #b - 1 {
+        if not bit(realNum, i) {
+            Not(b[i]);
+        }
+    }
+    StringNot(flag, b);
+    for i = 0 to #b - 1 {
+        if not bit(realNum, i) {
+            Not(b[i]);
+        }
+    }
+}
