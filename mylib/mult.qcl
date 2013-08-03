@@ -1,0 +1,12 @@
+include "adder2.qcl";
+
+operator MultiplyReg(qureg a, qureg b, qureg res) {
+    int i;
+    if #a != #b or #a != #res {
+        exit "Input registers must be of equal length";
+    }
+    
+    for i = 0 to #a - 1 {
+        CAddInPlaceOffset(res, b, i, a[i]);
+    }
+}

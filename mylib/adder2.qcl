@@ -35,6 +35,18 @@ operator CFlipCF(qureg a, qureg b, qureg c, qureg flip, qureg control) {
     !Not(a);
 }
 
+operator CFlipCFNoB(qureg a, qureg c, qureg flip, qureg control) {
+    // if a+b = c would have resulted in carrying this
+    // flips the cf
+    if #a != 1 or #c != 1 or #flip != 1 {
+        exit "All input registers must be one qubit";
+    }
+    
+    CNot(c, control);
+    StringNot(flip, c & a & control);
+    !CNot(c, control);
+}
+
 operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
     qureg empty[0];
     CFlipCF(a, b, c, flip, empty);
@@ -111,9 +123,8 @@ operator CAddInPlaceOffset(qureg dest, qureg add, int aOff, qureg control) {
             if (i > aOff) {
                 CFlipCF(dest[i - 1], add[i - 1 - aOff], temp[i - 1], dest[i], control);
             } else {
-                // i is lower than #dest which means that the next qubit up
-                // in dest is 0 by now, so we use that as our add[i - 1 - aOff]
-                CFlipCF(dest[i - 1], dest[i + 1], temp[i - 1], dest[i], control);
+                // b is effectively <0|
+                CFlipCFNoB(dest[i - 1], temp[i - 1], dest[i], control);
             }
         }
     }
