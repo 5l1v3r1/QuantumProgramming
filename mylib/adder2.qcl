@@ -65,7 +65,45 @@ operator AddRegCarry(qureg a, qureg b, qureg res, qureg carry) {
     FlipCF(a[#a - 1], b[#b - 1], res[#res - 1], carry);
 }
 
-// puts dest+add into dest
+// puts dest+(add << aOff) into dest
+operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
+    qureg temp[#dest];
+    int i;
+    int j;
+    
+    if (aOff >= #add) {
+        exit "Pointless offset was supplied";
+    }
+    
+    AddRegOffset(add, dest, temp, aOff);
+    
+    // zero out the dest
+    for j = 0 to #dest - 1 {
+        i = #dest - (j + 1);
+        // if the number of 1s in <cf| (+) <temp| (+) <add| is odd
+        // then the current qubit in dest[i] is <1|;
+        
+        CNot(dest[i], temp[i]);
+        
+        if (i >= aOff) {
+            CNot(dest[i], add[i - aOff]);
+        }
+        
+        // there is only a carry flag if i > 0
+        if (i > 0) {
+            if (i > aOff) {
+                FlipCF(dest[i - 1], add[i - 1 - aOff], temp[i - 1], dest[i]);
+            } else {
+                // i is lower than #dest which means that the next qubit up
+                // in dest is 0 by now, so we use that as our add[i - 1 - aOff]
+                FlipCF(dest[i - 1], dest[i + 1], temp[i - 1], dest[i]);
+            }
+        }
+    }
+    
+    Swap(temp, dest);
+}
+
 operator AddInPlace(qureg dest, qureg add) {
     qureg temp[#dest];
     int i;
