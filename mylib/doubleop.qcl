@@ -46,3 +46,17 @@ operator DoubleV(real angle, qureg result, qureg flags) {
 operator DoubleNot(qureg result, qureg flags) {
     StringNot(result, flags);
 }
+
+operator StringSwap(qureg a, qureg b, qureg c) {
+    int i;
+    
+    if #a != #b {
+        exit "Arguments must be equal in length";
+    }
+    
+    for i = 0 to #a - 1 {
+        StringNot(a[i], b[i] & c);
+        StringNot(b[i], a[i] & c);
+        StringNot(a[i], b[i] & c);
+    }
+}

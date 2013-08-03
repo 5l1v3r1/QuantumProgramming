@@ -1,8 +1,10 @@
 include "equality";
 
+set library 1;
+
 // this function looks at two inputs and an output and flips
 // the `flip` argument if a carry must have been performed.
-operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
+operator CFlipCF(qureg a, qureg b, qureg c, qureg flip, qureg control) {
     // if a+b = c would have resulted in carrying this
     // flips the cf
     if #a != 1 or #b != 1 or #c != 1 or #flip != 1 {
@@ -19,10 +21,10 @@ operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
     CNot(c, a);
     Not(b);
     Not(c);
-    DoubleNot(flip, c & b);
+    StringNot(flip, c & b & control);
     
     // if a was 1 we want !=, not =
-    CNot(flip, a);
+    StringNot(flip, a & control);
     
     // invert all the stuff we did
     !Not(c);
@@ -33,8 +35,13 @@ operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
     !Not(a);
 }
 
+operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
+    qureg empty[0];
+    CFlipCF(a, b, c, flip, empty);
+}
+
 // this puts (a << aOff) + b into res
-operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
+operator CAddRegOffset(qureg a, qureg b, qureg res, int aOff, qureg control) {
     int i;
     int j;
     
@@ -43,17 +50,22 @@ operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
     }
     
     for i = 0 to aOff - 1 {
-        CNot(res[i], b[i]);
+        StringNot(res[i], b[i] & control);
     }
     
     for i = aOff to #a - 1 {
         if i != aOff {
             j = i - 1;
-            FlipCF(a[j - aOff], b[j], res[j], res[i]);
+            CFlipCF(a[j - aOff], b[j], res[j], res[i], control);
         }
-        CNot(res[i], a[i - aOff]);
-        CNot(res[i], b[i]);
+        StringNot(res[i], a[i - aOff] & control);
+        StringNot(res[i], b[i] & control);
     }
+}
+
+operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
+    qureg control[0];
+    CAddRegOffset(a, b, res, aOff, control);
 }
 
 // puts a+b into res
@@ -71,7 +83,7 @@ operator AddRegCarry(qureg a, qureg b, qureg res, qureg carry) {
 // puts dest+(add << aOff) into dest
 // while running this allocates another n qubits
 // where n is the size of dest and add
-operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
+operator CAddInPlaceOffset(qureg dest, qureg add, int aOff, qureg control) {
     qureg temp[#dest];
     int i;
     int j;
@@ -80,7 +92,7 @@ operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
         exit "Pointless offset was supplied";
     }
     
-    AddRegOffset(add, dest, temp, aOff);
+    CAddRegOffset(add, dest, temp, aOff, control);
     
     // zero out the dest
     for j = 0 to #dest - 1 {
@@ -88,25 +100,25 @@ operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
         // if the number of 1s in <cf| (+) <temp| (+) <add| is odd
         // then the current qubit in dest[i] is <1|;
         
-        CNot(dest[i], temp[i]);
+        StringNot(dest[i], temp[i] & control);
         
         if (i >= aOff) {
-            CNot(dest[i], add[i - aOff]);
+            StringNot(dest[i], add[i - aOff] & control);
         }
         
         // there is only a carry flag if i > 0
         if (i > 0) {
             if (i > aOff) {
-                FlipCF(dest[i - 1], add[i - 1 - aOff], temp[i - 1], dest[i]);
+                CFlipCF(dest[i - 1], add[i - 1 - aOff], temp[i - 1], dest[i], control);
             } else {
                 // i is lower than #dest which means that the next qubit up
                 // in dest is 0 by now, so we use that as our add[i - 1 - aOff]
-                FlipCF(dest[i - 1], dest[i + 1], temp[i - 1], dest[i]);
+                CFlipCF(dest[i - 1], dest[i + 1], temp[i - 1], dest[i], control);
             }
         }
     }
     
-    Swap(temp, dest);
+    StringSwap(temp, dest, control);
 }
 
 // puts dest+add into dest
