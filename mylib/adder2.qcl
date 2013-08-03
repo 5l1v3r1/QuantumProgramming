@@ -1,0 +1,92 @@
+include "equality";
+
+// this function looks at two inputs and an output and flips
+// the `flip` argument if a carry must have been performed and
+// if all `flags` are set to <1|.
+operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
+    // if a+b = c would have resulted in carrying this
+    // flips the cf
+    if #a != 1 or #b != 1 or #c != 1 or #flip != 1 {
+        exit "All input registers must be one qubit";
+    }
+    
+    // if a == 0 then flip if b,c = 1,0
+    // if a == 1 then flip if b,c != 0,1
+    
+    // flips CF if bc = <1^a| <0^a|
+    Not(a);
+    CNot(b, a);
+    Not(a);
+    CNot(c, a);
+    Not(b);
+    Not(c);
+    DoubleNot(flip, c & b);
+    
+    // if a was 1 we want !=, not =
+    CNot(flip, a);
+    
+    // invert all the stuff we did
+    !Not(c);
+    !Not(b);
+    !CNot(c, a);
+    !Not(a);
+    !CNot(b, a);
+    !Not(a);
+}
+
+operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
+    int i;
+    int j;
+    
+    if #a != #b or #res != #b {
+        exit "All input registers must be equal in length.";
+    }
+    
+    for i = 0 to aOff - 1 {
+        CNot(res[i], b[i]);
+    }
+    
+    for i = aOff to #a - 1 {
+        if i != aOff {
+            j = i - 1;
+            FlipCF(a[j - aOff], b[j], res[j], res[i]);
+        }
+        CNot(res[i], a[i - aOff]);
+        CNot(res[i], b[i]);
+    }
+}
+
+operator AddReg(qureg a, qureg b, qureg res) {
+    AddRegOffset(a, b, res, 0);
+}
+
+operator AddRegCarry(qureg a, qureg b, qureg res, qureg carry) {
+    AddReg(a, b, res);
+    FlipCF(a[#a - 1], b[#b - 1], res[#res - 1], carry);
+}
+
+// puts dest+add into dest
+operator AddInPlace(qureg dest, qureg add) {
+    qureg temp[#dest];
+    int i;
+    int j;
+    
+    AddReg(add, dest, temp);
+    
+    // zero out the dest
+    for j = 0 to #dest - 1 {
+        i = #dest - (j + 1);
+        // if the number of 1s in <cf| (+) <temp| (+) <add| is odd
+        // then the current qubit in dest[i] is <1|;
+        
+        CNot(dest[i], temp[i]);
+        CNot(dest[i], add[i]);
+        
+        // there is only a carry flag if i > 0
+        if (i > 0) {
+            FlipCF(dest[i - 1], add[i - 1], temp[i - 1], dest[i]);
+        }
+    }
+    
+    Swap(temp, dest);
+}

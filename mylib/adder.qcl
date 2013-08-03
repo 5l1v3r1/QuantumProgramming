@@ -59,7 +59,7 @@ operator AddRegNoCarry(qureg r1, qureg r2, qureg res) {
     ZeroCF(r1[#r1 - 1], r2[#r2 - 1], res[#res - 1], c);
 }
 
-operator AddInPlace(qureg dest, qureg add) {
+operator AddInPlace(qureg dest, qureg add, int offset) {
     qureg temp[#dest];
     qureg cf[1];
     int i;
