@@ -1,5 +1,6 @@
 include "doubleop";
 
+// flips flag if b1 and b2 are equal bit for bit
 operator NotIfEqual(qureg flag, qureg b1, qureg b2) {
     int i;
     
@@ -26,6 +27,7 @@ operator NotIfEqual(qureg flag, qureg b1, qureg b2) {
     }
 }
 
+// flips flag if b1 and b2 are equal bit for bit and all bits in c are <1|
 operator CNotIfEqual(qureg flag, qureg b1, qureg b2, qureg c) {
     int i;
     
@@ -52,6 +54,8 @@ operator CNotIfEqual(qureg flag, qureg b1, qureg b2, qureg c) {
     }
 }
 
+// flips flag if the qureg b is equivalent to the
+// classical bit string realNum
 operator NotIfEqualClassical(qureg flag, qureg b, int realNum) {
     int i;
     for i = 0 to #b - 1 {

@@ -1,8 +1,7 @@
 include "equality";
 
 // this function looks at two inputs and an output and flips
-// the `flip` argument if a carry must have been performed and
-// if all `flags` are set to <1|.
+// the `flip` argument if a carry must have been performed.
 operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
     // if a+b = c would have resulted in carrying this
     // flips the cf
@@ -34,6 +33,7 @@ operator FlipCF(qureg a, qureg b, qureg c, qureg flip) {
     !Not(a);
 }
 
+// this puts (a << aOff) + b into res
 operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
     int i;
     int j;
@@ -56,16 +56,21 @@ operator AddRegOffset(qureg a, qureg b, qureg res, int aOff) {
     }
 }
 
+// puts a+b into res
 operator AddReg(qureg a, qureg b, qureg res) {
     AddRegOffset(a, b, res, 0);
 }
 
+// puts a+b into res and sets carry if a carry was performed and
+// thus that an overflow occured
 operator AddRegCarry(qureg a, qureg b, qureg res, qureg carry) {
     AddReg(a, b, res);
     FlipCF(a[#a - 1], b[#b - 1], res[#res - 1], carry);
 }
 
 // puts dest+(add << aOff) into dest
+// while running this allocates another n qubits
+// where n is the size of dest and add
 operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
     qureg temp[#dest];
     int i;
@@ -104,6 +109,9 @@ operator AddInPlaceOffset(qureg dest, qureg add, int aOff) {
     Swap(temp, dest);
 }
 
+// puts dest+add into dest
+// while running this allocates another n qubits
+// where n is the size of dest and add
 operator AddInPlace(qureg dest, qureg add) {
     qureg temp[#dest];
     int i;

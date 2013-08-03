@@ -29,3 +29,7 @@ Today I finally became comfortable with the QFT. Now it is beginning to make sen
 In preparation for implementing Shor's algorithm on my own, I decided to write my own arithmetic operations so that I could implement exponentiation mod N (needed for Shor's algorithm). While I did not nearly finish what I plan to, I was able to implement an addition function which does not return an additional carry bit (although at present it still uses a scratch qubit for this). In addition, I made a wrapper function which adds in place (although at present it does allocate a third qureg). This will make it possible to implement long multiplication.
 
 While most of the circuits I am implementing are pretty closely knit with their classical equivalents, I am noticing myself becoming increasingly comfortable with unitary operations. I can quickly tell whether something is possible or not, and I can pretty quickly implement any gate which is thrown my way.
+
+### Sat, Aug 3, 1:48
+
+Here is a brief update concerning my end-of-the-day progress. I have managed to remove the need for carry bits throughout the body of my addition algorithms. With this task complete, I will begin tomorrow to implement more complex math functions such as multiplication. Meanwhile, I have seen some talk about an efficient QFT-based adder. While it seems promising, I am concerned that it will fail to be fully accurate for large numbers due to imperfect V-gate precision. Thus, I am sticking to my classical adders for now.

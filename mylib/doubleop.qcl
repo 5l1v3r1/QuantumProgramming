@@ -1,5 +1,7 @@
 set library 1;
 
+// applies a controlled V gate to result with angle if
+// all flags are <1|
 operator StringV(real angle, qureg result, qureg flags) {
     int lastFlag;
     if #flags == 1 {
@@ -24,6 +26,7 @@ operator StringV(real angle, qureg result, qureg flags) {
     }
 }
 
+// applies a not to result if all flags are <1|
 operator StringNot(qureg result, qureg flags) {
     if #flags == 1 {
         CNot(result, flags);
@@ -34,10 +37,12 @@ operator StringNot(qureg result, qureg flags) {
     }
 }
 
+// see StringV(); this is simply a legacy function
 operator DoubleV(real angle, qureg result, qureg flags) {
     StringV(angle, result, flags);
 }
 
+// see StringNot(); this is simply a legacy function
 operator DoubleNot(qureg result, qureg flags) {
     StringNot(result, flags);
 }

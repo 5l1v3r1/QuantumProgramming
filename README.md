@@ -8,9 +8,9 @@ In addition, I have already created some functions which I believe would be wort
 Some Useful Functions
 =====================
 
-`adder.qcl` contains a function `AddReg(a, b, c, d)` for quantum addition. The variables `a`, `b`, and `c` must be equal in size and `d` should be one qubit. The function sums `a` and `b` and stores the result in `c`. If an overflow occured, `d` is set. Both `c` and `d` are assumed to be passed in as `<0|`.
+`adder2.qcl` contains a function `AddReg(a, b, c)` for quantum addition. The variables `a`, `b`, and `c` must be equal in size. The function sums `a` and `b` and stores the result in `c`. It is assumed that `c` is <0| when passed in. Another useful function is `AddInPlace(a, b)` which adds `a` to `b` and stores the result in `a`. While this seems nice, the function still temporarily allocates a third register for computational purposes.
 
-`doubleop.qcl` is ridiculously useful. The `DoubleV(a,b,c)` function applies a phase shift `a` to `b` if c = <11|. `DoubleNot(a,b)` flips `a` if `b` is `<11|`. `StringV` and `StringNot` act the same way, but the last argument can be any length. If the last argument is not all 1s, the operation will not be performed.
+`doubleop.qcl` is ridiculously useful. The `DoubleV(a,b,c)` function applies a phase shift `a` to `b` if `c` = <11|. `DoubleNot(a,b)` flips `a` if `b` is `<11|`. `StringV` and `StringNot` act the same way, but the last argument can be any length. If the last argument is not all 1s, the operation will not be performed.
 
 `equality.qcl` allows you to compare two quantum registers. The `NotIfEqual(a,b,c)` flips `a` if `b` is equal (bit-by-bit) to `c`. The `CNotIfEqual(a,b,c,d)` function is similar, but it only operates if all qubits in `d` are set to `<1|`.
 
