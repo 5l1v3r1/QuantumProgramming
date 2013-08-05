@@ -1,5 +1,7 @@
 include "mod";
 
+set check 1;
+
 int maximumValue(int a, int b) {
     if a < b {
         return b;
@@ -17,7 +19,6 @@ procedure testModMult() {
     
     print "testing BitwiseModMultIP() for 4-qubits...";
     
-    set check 1;    
     for i = 1 to 14 {
         for j = 1 to 14 {
             for modulus = (maximumValue(i,j) + 1) to 15 {
@@ -34,7 +35,35 @@ procedure testModMult() {
             }
         }
     }
-    set check 0;
+}
+
+procedure testModExp() {
+    int i;
+    int j;
+    int modulus;
+    int measured;
+    qureg x[4];
+    qureg y[4];
+    
+    print "testing BitwiseModExp() for 4-qubits";
+    
+    for i = 1 to 14 {
+        for j = 1 to 14 {
+            for modulus = (maximumValue(i, j + 1)) to 15 {
+                if gcd(modulus, j) == 1 {
+                    set(i, x);
+                    BitwiseModExp(j, x, y, modulus);
+                    measure y, measured;
+                    reset;
+                    if measured != (j^i) mod modulus {
+                        print "fail for i=", i, " j=", j, " measured=", measured;
+                        exit "goodbye";
+                    }
+                }
+            }
+        }
+    }
 }
 
 testModMult();
+testModExp();

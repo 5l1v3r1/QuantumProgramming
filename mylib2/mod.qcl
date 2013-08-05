@@ -232,4 +232,24 @@ cond qufunct BitwiseModMultIP(int a, qureg b, int aMod) {
     Swap(b, temp);
 }
 
+/**
+ * Puts a^b mod aMod into c
+ */
+cond qufunct BitwiseModExp(int a, qureg b, qureg c, int aMod) {
+    int value = a;
+    int i;
+    
+    if #b != #c {
+        exit "Input arguments must be equal in length.";
+    }
+    
+    Not(c[0]);
+    for i = 0 to #b - 1 {
+        if b[i] {
+            BitwiseModMultIP(value, c, aMod);
+        }
+        value = (value * value) mod aMod;
+    }
+}
+
 set library 0;
