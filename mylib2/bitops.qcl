@@ -141,9 +141,11 @@ cond qufunct QubitwiseAddIP(qureg a, qureg b, int aShift) {
 cond qufunct QubitwiseIsEQ(qureg a, qureg b, qureg c) {
     int i;
     for i = 0 to #a - 1 {
-        if not b[i] {
+        Not(b[i]); // NOTE: bug fix
+        if b[i] {
             Not(a[i]);
         }
+        Not(b[i]);
     }
     
     if a {
@@ -151,9 +153,11 @@ cond qufunct QubitwiseIsEQ(qureg a, qureg b, qureg c) {
     }
     
     for i = 0 to #a - 1 {
-        if not b[i] {
+        Not(b[i]); // NOTE: bug fix
+        if b[i] {
             Not(a[i]);
         }
+        Not(b[i]);
     }
 }
 
@@ -163,26 +167,34 @@ cond qufunct QubitwiseIsGT(qureg a, qureg b, qureg c) {
     int j;
     
     for i = 0 to #a - 1 {
-        if not b[i] {
+        Not(b[i]); // NOTE: bug fix
+        if b[i] {
             Not(a[i]);
         }
+        Not(b[i]); // NOTE: bug fix
     }
     
     for i = 0 to #a - 1 {
         j = #a - (i + 1);
         // a > b if all after this is 1 and
         // a[j] is 0 and not bit(b, j)
-        if not b[j] {
-            if not a[j] and a[(j+1)\i] {
+        Not(b[j]); // NOTE: bug fix
+        if b[j] {
+            Not(a[j]); // NOTE: bug fix
+            if a[j] and a[(j+1)\i] {
                 Not(c);
             }
+            Not(a[j]); // NOTE: bug fix
         }
+        Not(b[j]); // NOTE: bug fix
     }
     
     for i = 0 to #a - 1 {
-        if not b[i] {
+        Not(b[i]); // NOTE: bug fix
+        if b[i] {
             Not(a[i]);
         }
+        Not(b[i]); // NOTE: bug fix
     }
 }
 
@@ -320,9 +332,11 @@ cond qufunct BitwiseIsGT(qureg a, int b, qureg c) {
         // a > b if all after this is 1 and
         // a[j] is 0 and not bit(b, j)
         if not bit(b, j) {
-            if not a[j] and a[(j+1)\i] {
+            Not(a[j]); // NOTE: bug fix
+            if a[j] and a[(j+1)\i] {
                 Not(c);
             }
+            Not(a[j]); // NOTE: bug fix
         }
     }
     

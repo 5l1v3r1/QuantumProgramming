@@ -17,17 +17,14 @@ procedure testModMult() {
     
     print "testing BitwiseModMultIP() for 4-qubits...";
     
+    set check 1;    
     for i = 1 to 14 {
         for j = 1 to 14 {
             for modulus = (maximumValue(i,j) + 1) to 15 {
                 if gcd(modulus, j) == 1 {
                     set(i, x);
                     BitwiseModMultIP(j, x, modulus);
-                    set check 1;
                     measure x, measured;
-                    Not(x[0]); // if the heap is corrupted, a call
-                               // to Not() will indicate so
-                    set check 0;
                     reset;
                     if measured != (i * j) mod modulus {
                         print "failed for i=", i, " j=", j, " mod=", modulus;
@@ -37,6 +34,7 @@ procedure testModMult() {
             }
         }
     }
+    set check 0;
 }
 
 testModMult();
