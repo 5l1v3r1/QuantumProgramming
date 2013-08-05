@@ -1,0 +1,230 @@
+/**
+ * This is a set of modular arithmetic functions which
+ * may be necessary in order to implement Shor's algorithm.
+ */
+
+include "bitops";
+
+set library 1;
+
+/**
+ * Subtracts a modulus aMod from `b` if `b` is greater than
+ * `aMod`. This function is used internally by QubitwiseModAddIP.
+ * For this reason, the argument `a` which was originally added to
+ * `b` during the addition operation must be passed in to allow this
+ * operation to be invertible.
+ * @argument a The number which must be less than or equal to `b`
+ * @argument b The number to cut down to size
+ * @argument aMod The classical modulus to use
+ */
+cond qufunct QubitwiseSubMod(qureg a, qureg b, int aMod) {
+    qureg isGe[1];
+    BitwiseIsGT(b, aMod, isGe);
+    BitwiseIsEQ(b, aMod, isGe);
+    
+    if isGe {
+        !BitwiseAddIP(aMod, b, 0);
+    }
+    
+    QubitwiseIsGT(a, b, isGe);
+}
+
+/**
+ * Doubles `a` modulus `aMod`
+ * @discussion This function requires that `aMod` is divisible
+ * by 2. Otherwise, the operation would not be invertible.
+ */
+cond qufunct QubitwiseModDouble(qureg a, int aMod) {
+    int i;
+    int j;
+    qureg isGe[1];
+    
+    if aMod mod 2 == 0 {
+        exit "Modulus must be odd in order to invertibly double";
+    }
+    
+    // shift left by 1
+    for i = 0 to #a - 2 {
+        Swap(a[#a - 1], a[i]);
+    }
+    
+    BitwiseIsGT(a, aMod, isGe);
+    BitwiseIsEQ(a, aMod, isGe);
+    
+    if isGe {
+        !BitwiseAddIP(aMod, a, 0);
+    }
+    
+    // if the result is odd then we know we must have subtracted
+    if a[0] {
+        Not(isGe);
+    }
+}
+
+/**
+ * Computes (a+b)%aMod and stores the value in `b`.
+ * @argument a The first and constant operand
+ * @argument b The second operand and the result's destination
+ * @argument aShift The input `a` will be multiplied by 2^aShift
+ * before performing the addition operation. In order for this
+ * operation to be invertible, `aMod` must not be divisible by 2
+ * if this argument is greater than 0.
+ * @argument aMod The classical modulus to use
+ * Requirements:
+ *  - if aShift != 0, aMod must be odd
+ *  - 2^(#a) must be >= aMod
+ *  - both a and b must be less than aMod
+ */
+cond qufunct QubitwiseModAddIP(qureg a, qureg b, int aShift, int aMod) {
+    qureg carry[1];
+    int i;
+    if #a != #b {
+        exit "Input arguments must be equal in length.";
+    }
+    if 2^(#a) < aMod {
+        exit "Given aMod is too large.";
+    }
+    
+    for i = 1 to aShift {
+        QubitwiseModDouble(a & carry, aMod);
+    }
+    
+    // add a to b and set the carry bit
+    QubitwiseAddIP(a, b & carry, 0);
+    
+    // subtracting the modulus will unset the carry bit
+    QubitwiseSubMod(a, b & carry, aMod);
+}
+
+/**
+ * Replaces `a` with the additive inverse of `a` mod `aMod`.
+ * @argument a This must be less than `aMod`
+ * @argument aMod The classical modulus to use
+ */
+cond qufunct QubitwiseModAddInv(qureg a, int aMod) {
+    !BitwiseAddIP(aMod, a, 0); // sets a to a-aMod
+    TwosComplementIP(a); // sets a to aMod-a
+}
+
+/********************************
+ * Classical-quantum operations *
+ ********************************/
+
+/**
+ * See QubitwiseSubMod().
+ */
+cond qufunct BitwiseSubMod(int a, qureg b, int aMod) {
+    qureg isGe[1];
+    BitwiseIsGT(b, aMod, isGe);
+    BitwiseIsEQ(b, aMod, isGe);
+    
+    if isGe {
+        !BitwiseAddIP(aMod, b, 0);
+    }
+    
+    // BitwiseIsGT(a, b, isGe); does not exist:
+    BitwiseIsGT(b, a, isGe);
+    BitwiseIsEQ(b, a, isGe);
+    Not(isGe);
+}
+
+/**
+ * See QubitwiseModAddIP(). Note that the `aShift` argument
+ * is not needed because the classical program can shift
+ * `a` internally.
+ */
+cond qufunct BitwiseModAddIP(int a, qureg b, int aMod) {
+    qureg carry[1];
+    
+    // add a to b and set the carry bit
+    BitwiseAddIP(a, b & carry, 0);
+    
+    // subtracting the modulus will unset the carry bit
+    BitwiseSubMod(a, b & carry, aMod);
+}
+
+/**
+ * Puts (a*b)%aMod into `dest`.
+ * @argument a Must be less than aMod
+ * @argument b Must be less than aMod
+ * @argument dest Must initially be zero'd
+ * @argument aMod The classical modulus to use
+ * @discussion This operation is invertible even if gcd(a, aMod) != 1.
+ * The reason for this is that, given both operands and a result,
+ * the original result could easily be calculated. However, the operation
+ * would not be invertible if one of the operands were to be lost.
+ * Thus, this does not violate the fact that modular multiplication
+ * is not always invertible.
+ */
+cond qufunct BitwiseModMult(int a, qureg b, qureg dest, int aMod) {
+    int i;
+    int addA;
+    
+    if a >= aMod {
+        exit "Input operands must be less than modulus.";
+    }
+    
+    for i = 0 to #b - 1 {
+        addA = (a * (2^i)) mod aMod;
+        if b[i] {
+            BitwiseModAddIP(addA, dest, aMod);
+        }
+    }
+}
+
+/**
+ * Uses the Extended Euclidean Algorithm to compute
+ * the inverse of `a` mod `aMod`.
+ * @argument a The number to invert; must be less than `aMod`
+ * @argument aMod The classical modulus to use.
+ */
+int BitwiseModMultInv(int a, int aMod) {
+    int big = aMod;
+    int small = a;
+    int quotient;
+    int temp;
+    
+    int lastCoeff = 0;
+    int currentCoeff = 1;
+    
+    if small == 0 or small > a {
+        exit "Invalid input arguments.";
+    } 
+    
+    while big mod small > 0 {
+        quotient = big / small;
+        
+        temp = lastCoeff - (quotient * currentCoeff);
+        lastCoeff = currentCoeff;
+        currentCoeff = temp;
+        
+        small = big mod small;
+        big = (big - small) / quotient;
+    }
+
+    if small != 1 {
+        exit "Invalid input arguments: arguments must be coprime.";
+    }
+    
+    return currentCoeff mod aMod;
+}
+
+/**
+ * Puts (a*b)%aMod into `b`.
+ * @argument a Classical operand which must be less than aMod.
+ * In order for this operation to be invertible, gcd(a, aMod)
+ * must be equal to 1.
+ * @argument b Quantum operand and destination which must initially
+ * be less than `aMod`
+ * @argument aMod The classical modulus to use
+ */
+cond qufunct BitwiseModMultIP(int a, qureg b, int aMod) {
+    qureg temp[#b];
+    BitwiseModMult(a, b, temp, aMod);
+    // set b to its additive inverse
+    QubitwiseModAddInv(b, aMod);
+    BitwiseModMult(BitwiseModMultInv(a, aMod), temp, b, aMod);
+    Swap(b, temp);
+}
+
+set library 0;

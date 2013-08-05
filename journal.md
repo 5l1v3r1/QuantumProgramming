@@ -33,3 +33,15 @@ While most of the circuits I am implementing are pretty closely knit with their 
 ### Sat, Aug 3, 1:48
 
 Here is a brief update concerning my end-of-the-day progress. I have managed to remove the need for carry bits throughout the body of my addition algorithms. With this task complete, I will begin tomorrow to implement more complex math functions such as multiplication. Meanwhile, I have seen some talk about an efficient QFT-based adder. While it seems promising, I am concerned that it will fail to be fully accurate for large numbers due to imperfect V-gate precision. Thus, I am sticking to my classical adders for now.
+
+### Sun, Aug 4, 21:22
+
+Yesterday I did not make any significant progress, but I did make some serious refinements to my existing library. In fact, I made so many refinements that I created a new `mylib2/` directory in which I will be working for now on. What motivated me to make these changes was a realization that QCL includes a `cond` directive before a `qufunct`. This makes it possible to use if statements to check qubits, because all `cond` functions can only call other `cond` functions and ultimately this leads to a series of Not() calls which only operate if the internal condition array is a string of 1s. With this in mind, I remade all of my arithmetic functions with a neater naming convention and a suite of int-with-qureg arithmetic functions.
+
+Yesterday I was beginning to become more comfortable with QCL's built-in inverter (although today I failed to realize its potential use for my modular multiplier). I used the fact that the two's complement is its own inverse in order to implement in-place two's complement based on a non-overwriting two's complement function.
+
+Today I figured out how I shall implement a^x mod N evaluation for Shor's algorithm. Essentially, I will compute a^2 and only multiply by this if x[1] is set. Then I will compute a^4 and only multiply by this if x[2] is set. I can compute a^n mod N quickly in the classical setting, and then use `cond` magic to use `x` as a set of flags.
+
+So, I set out on a course to realize modular exponentiation. My first step was to implement in place modular addition. I began this yesterday, but it turns out that much of the code I wrote yesterday was not even necessary in the end.
+
+My next step was to implement multiplication. It was not difficult for me to implement multiplication which overwrote an initially zero'd register. However, in order to make an in-place multiplication operator invertible, I had to figure out how to zero out one of the input registers after computing the outcome. To do this, I briefly skimmed the wikipedia page for the Extended Euclidean Algorithm and wrote a subroutine to calculate the multiplicative inverse of `a` mod `N`. Then, using this, I could add `b` to a register without reading `b` directly. My last step was to make `b` its additive inverse mod `N` before computing `a^-1`*`N` into `b`. This allowed me to zero `b` and thus to swap it with my temp variable.

@@ -1,0 +1,336 @@
+// this library will serve as a set of functions to deal
+// with quantum operations mod a preset (classical) N.
+
+set library 1;
+
+cond qufunct TwosComplement(qureg a, qureg res) {
+    int i;
+    
+    if #a != #res {
+        exit "Input arguments must be equal in length.";
+    }
+    
+    for i = 0 to #a - 1 {
+        CNot(res[i], a[i]);
+        Not(res[i]);
+    }
+    
+    Not(res[0]);
+    for i = 1 to #a - 1 {
+        // if Not(a[i - 1]) is 1 and res[i - 1] is 0
+        // then we know that we carried
+        Not(a[i - 1]);
+        Not(res[i - 1]);
+        
+        CNot(res[i], a[i - 1] & res[i - 1]);
+        
+        Not(a[i - 1]);
+        Not(res[i - 1]);
+    }
+}
+
+cond qufunct TwosComplementIP(qureg a) {
+    qureg temp[#a];
+    TwosComplement(a, temp);
+    !TwosComplement(temp, a);
+    Swap(temp, a);
+}
+
+/********************************
+ * Quantum arithmetic functions *
+ ********************************/
+
+cond qufunct QubitwiseAddCarried(qureg a, qureg b, qureg c, qureg flag) {
+    // if a+b = c would have resulted in carrying, then flip flag
+    if #a != 1 or #b != 1 or #c != 1 or #flag != 1 {
+        exit "All input registers must be one qubit";
+    }
+    
+    // if a == 0 then flip if b,c = 1,0
+    // if a == 1 then flip if b,c != 0,1
+    
+    // flips CF if bc = <1^a| <0^a|
+    Not(a);
+    CNot(b, a);
+    Not(a);
+    CNot(c, a);
+    Not(b);
+    Not(c);
+    CNot(flag, c & b);
+    
+    // if a was 1 we want !=, not =
+    CNot(flag, a);
+    
+    // invert all the stuff we did
+    !Not(c);
+    !Not(b);
+    !CNot(c, a);
+    !Not(a);
+    !CNot(b, a);
+    !Not(a);
+}
+
+cond qufunct QubitwiseAdd(qureg a, qureg b, qureg res, int aShift) {
+    int i;
+    int j;
+    
+    if #a != #b {
+        exit "Input arguments must be equal in length.";
+    }
+    
+    if aShift >= #a {
+        exit "Given input shift is too high";
+    }
+    
+    for i = 0 to #a - 1 {
+        j = i - 1;
+        
+        // check if we carried last time
+        if (i > aShift) {
+            QubitwiseAddCarried(a[j - aShift], b[j], res[j], res[i]);
+        }
+        
+        // add bitwise
+        if (i >= aShift) {
+            CNot(res[i], a[i - aShift]);
+        }
+        CNot(res[i], b[i]);
+    }
+    
+    // we can additionally supply an output carry flag if
+    // there is room for such a thing
+    if #res > #a {
+        j = #a - 1;
+        QubitwiseAddCarried(a[j - aShift], b[j], res[j], res[#a]);
+    }
+}
+
+// puts the contents of a+b into b
+cond qufunct QubitwiseAddIP(qureg a, qureg b, int aShift) {
+    int i;
+    int j;
+    qureg temp[#b];
+    
+    if #a > #b {
+        exit "Input arguments must be equal in length (or #b > #a).";
+    }
+    QubitwiseAdd(a, b[0\#a], temp, aShift);
+    
+    // zero out b based on what temp came out to be
+    for j = 0 to #a - 1 {
+        i = #a - (j + 1);
+        // if the number of 1s in <cf| (+) <temp| (+) <a| is odd
+        // then the current qubit in dest[i] is <1|;
+        
+        CNot(b[i], temp[i]);
+        if (i >= aShift) {
+            CNot(b[i], a[i - aShift]);
+        }
+        
+        // there is only a carry flag if i > aShift
+        if (i > aShift) {
+            QubitwiseAddCarried(a[i - aShift - 1], b[i - 1], temp[i - 1], b[i]);
+        }
+    }
+    
+    // swap b and temp
+    Swap(b, temp);
+}
+
+// sets `c` if a==b
+cond qufunct QubitwiseIsEQ(qureg a, qureg b, qureg c) {
+    int i;
+    for i = 0 to #a - 1 {
+        if not b[i] {
+            Not(a[i]);
+        }
+    }
+    
+    if a {
+        Not(c);
+    }
+    
+    for i = 0 to #a - 1 {
+        if not b[i] {
+            Not(a[i]);
+        }
+    }
+}
+
+// sets `c` if a>b
+cond qufunct QubitwiseIsGT(qureg a, qureg b, qureg c) {
+    int i;
+    int j;
+    
+    for i = 0 to #a - 1 {
+        if not b[i] {
+            Not(a[i]);
+        }
+    }
+    
+    for i = 0 to #a - 1 {
+        j = #a - (i + 1);
+        // a > b if all after this is 1 and
+        // a[j] is 0 and not bit(b, j)
+        if not b[j] {
+            if not a[j] and a[(j+1)\i] {
+                Not(c);
+            }
+        }
+    }
+    
+    for i = 0 to #a - 1 {
+        if not b[i] {
+            Not(a[i]);
+        }
+    }
+}
+
+/******************************************
+ * Quantum-classical arithmetic functions *
+ ******************************************/
+
+cond qufunct BitwiseAddCarried(boolean a, qureg b, qureg c, qureg flag) {
+    // if a+b = c would have resulted in carrying, then flip flag
+    if #b != 1 or #c != 1 or #flag != 1 {
+        exit "All input registers must be one qubit";
+    }
+    
+    // if a == 0 then flip if b,c = 1,0
+    // if a == 1 then flip if b,c != 0,1
+    
+    // flips CF if bc = <1^a| <0^a|
+    if a {
+        Not(b);
+    } else {
+        Not(c);
+    }
+    
+    CNot(flag, c & b);
+    // if a was 1 we want !=, not =
+    if a {
+        Not(flag);
+    }
+    
+    // invert all the stuff we did
+    if a {
+        Not(b);
+    } else {
+        Not(c);
+    }
+}
+
+cond qufunct BitwiseAdd(int a, qureg b, qureg res, int aShift) {
+    int i;
+    int j;
+    
+    if aShift >= #b {
+        exit "Given input shift is too high";
+    }
+    
+    for i = 0 to #b - 1 {
+        j = i - 1;
+        
+        // check if we carried last time
+        if (i > aShift) {
+            BitwiseAddCarried(bit(a, j - aShift), b[j], res[j], res[i]);
+        }
+        
+        // add bitwise
+        if (i >= aShift) {
+            if bit(a, i - aShift) {
+                Not(res[i]);
+            }
+        }
+        CNot(res[i], b[i]);
+    }
+    
+    // we can additionally supply an output carry flag if
+    // there is room for such a thing
+    if #res > #b {
+        j = #b - 1;
+        BitwiseAddCarried(bit(a, j - aShift), b[j], res[j], res[#b]);
+    }
+}
+
+// puts the contents of a+b into b
+cond qufunct BitwiseAddIP(int a, qureg b, int aShift) {
+    int i;
+    int j;
+    qureg temp[#b];
+        
+    BitwiseAdd(a, b, temp, aShift);
+    
+    // zero out b based on what temp came out to be
+    for j = 0 to #b - 1 {
+        i = #b - (j + 1);
+        // if the number of 1s in <cf| (+) <temp| (+) <a| is odd
+        // then the current qubit in dest[i] is <1|;
+        
+        CNot(b[i], temp[i]);
+        if (i >= aShift) {
+            if bit(a, i - aShift) {
+                Not(b[i]);
+            }
+        }
+        
+        // there is only a carry flag if i > aShift
+        if (i > aShift) {
+            BitwiseAddCarried(bit(a, i - aShift - 1), b[i - 1], temp[i - 1], b[i]);
+        }
+    }
+    
+    // swap b and temp
+    Swap(b, temp);
+}
+
+// sets `c` if a==b
+cond qufunct BitwiseIsEQ(qureg a, int b, qureg c) {
+    int i;
+    for i = 0 to #a - 1 {
+        if not bit(b, i) {
+            Not(a[i]);
+        }
+    }
+    
+    if a {
+        Not(c);
+    }
+    
+    for i = 0 to #a - 1 {
+        if not bit(b, i) {
+            Not(a[i]);
+        }
+    }
+}
+
+// sets `c` if a>b
+cond qufunct BitwiseIsGT(qureg a, int b, qureg c) {
+    int i;
+    int j;
+    
+    for i = 0 to #a - 1 {
+        if not bit(b, i) {
+            Not(a[i]);
+        }
+    }
+    
+    for i = 0 to #a - 1 {
+        j = #a - (i + 1);
+        // a > b if all after this is 1 and
+        // a[j] is 0 and not bit(b, j)
+        if not bit(b, j) {
+            if not a[j] and a[(j+1)\i] {
+                Not(c);
+            }
+        }
+    }
+    
+    for i = 0 to #a - 1 {
+        if not bit(b, i) {
+            Not(a[i]);
+        }
+    }
+}
+
+set library 0;
