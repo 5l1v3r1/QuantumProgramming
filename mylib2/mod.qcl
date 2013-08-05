@@ -206,7 +206,12 @@ int BitwiseModMultInv(int a, int aMod) {
         exit "Invalid input arguments: arguments must be coprime.";
     }
     
-    return currentCoeff mod aMod;
+    currentCoeff = currentCoeff mod aMod;
+    if (currentCoeff < 0) {
+        return aMod + currentCoeff;
+    } else {
+        return currentCoeff;
+    }
 }
 
 /**
