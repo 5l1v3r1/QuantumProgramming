@@ -1,0 +1,28 @@
+set library 1;
+
+real QFTPhaseShift(int i, int j, int n) {
+    real iR = i;
+    real jR = j;
+    real nR = n;
+    return 2.0*pi * 2^(-iR - 1) * 2^(jR);
+}
+
+operator QFT(qureg x) {
+    int i;
+    int j;
+    
+    for i = 0 to #x - 1 {
+        H(x[i]);
+        for j = 0 to i - 1 {
+            V(QFTPhaseShift(i, j, #x), x[i] & x[j]);
+        }
+    }
+    // in order to make the circuit possible we had to effectively
+    // reverse the bit order of the output; here we reverse
+    // it back.
+    for i = 0 to #x / 2 {
+        Swap(x[i], x[#x - i - 1]);
+    }
+}
+
+set library 0;
